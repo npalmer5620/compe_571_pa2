@@ -28,7 +28,7 @@
 int main2(int argc, char const *argv[])
 {
     struct timespec start, end[4];
-	//pid_t pid1, pid2, pid3, pid4;
+	pid_t pid1, pid2, pid3, pid4;
 	int running;
     int done;
 
