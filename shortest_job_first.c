@@ -94,6 +94,43 @@ int main2(int argc, char const *argv[])
 	running4 = 1;
     done4 = 1;
 
+	//struct with pid and workload and reorder according to runtime (higher workload, higher runtime)
+	struct Process{
+		pid_t pidNum;
+		int Workload;
+	};
+	
+	pid_t pidVal[4];
+	pidVal[0] = pid1;
+	pidVal[1] = pid2;
+	pidVal[2] = pid3;
+	pidVal[3] = pid4;
+
+	int work[4];
+	work[0] = WORKLOAD1;
+	work[1] = WORKLOAD2;
+	work[2] = WORKLOAD3;
+	work[3] = WORKLOAD4;
+
+	struct Process process[4];
+	for(int i = 0; i< 4; i++){
+		process[i].pidNum = pidVal[i];
+		process[i].Workload = work[i];
+	}
+
+	struct Process temp;
+	for (int i = 0; i < 4; i++){
+		for(int j = 0; j< 4; j++){
+			if(process[i].Workload > process[j].Workload){
+				temp.pidNum = process[i].pidNum;
+				temp.pidNum = process[i].Workload;
+
+				process[i] = process[j];
+				process[j] = temp;
+			}
+		}
+	}
+
     clock_gettime(CLOCK_MONOTONIC, &start);
 
 	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
