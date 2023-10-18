@@ -28,9 +28,9 @@
 int main2(int argc, char const *argv[])
 {
     struct timespec start, end[4];
-	pid_t pid1, pid2, pid3, pid4;
-	int running1, running2, running3, running4;
-    int done1, done2, done3, done4;
+	//pid_t pid1, pid2, pid3, pid4;
+	int running;
+    int done;
 
 	pid1 = fork();
 
@@ -85,14 +85,8 @@ int main2(int argc, char const *argv[])
 		to be implemented.
 	************************************************************************************************/
 
-	running1 = 1;
-    done1 = 1;
-	running2 = 1;
-    done2 = 1;
-	running3 = 1;
-    done3 = 1;
-	running4 = 1;
-    done4 = 1;
+	running = 0;
+    done = 1;
 
 	//struct with pid and workload and reorder according to runtime (higher workload, higher runtime)
 	struct Process{
@@ -133,47 +127,16 @@ int main2(int argc, char const *argv[])
 
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
-	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
+	for(int i = 0; i < 4; i++){
+		running++;
+		if(running >0){
+			kill(process[i].pidNum, SIGCONT);
+			usleep(process[i].Workload);
+			kill(process[i].pidNum,SIGSTOP);
+
 		}
-
-        waitpid(pid1, &running1, WNOHANG);
-        if (done1 != running1) { clock_gettime(CLOCK_MONOTONIC, &end[0]); }
-        done1 = running1;
-
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-
-        waitpid(pid2, &running2, WNOHANG);
-        if (done2 != running2) { clock_gettime(CLOCK_MONOTONIC, &end[1]); }
-        done2 = running2;
-
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-
-        waitpid(pid3, &running3, WNOHANG);
-        if (done3 != running3) { clock_gettime(CLOCK_MONOTONIC, &end[2]); }
-        done3 = running3;
-
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-
-        waitpid(pid4, &running4, WNOHANG);
-        if (done4 != running4) { clock_gettime(CLOCK_MONOTONIC, &end[3]); }
-        done4 = running4;
+		waitpid(process[i].pidNum, &running, WNOHANG);
+        if (done != running) { clock_gettime(CLOCK_MONOTONIC, &end[i]); }
 	}
 
 
