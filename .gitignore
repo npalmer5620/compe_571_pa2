@@ -69,5 +69,6 @@ _deps
 
 # build
 build/
+build/*
 .vscode/
 PA2
