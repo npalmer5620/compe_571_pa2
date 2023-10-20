@@ -1,155 +1,80 @@
-#include <stdio.h> 
-#include <sys/types.h> 
-#include <unistd.h>  
-#include <stdlib.h>  
-#include <sys/wait.h> 
-#include <string.h> 
-#include <time.h> 
-#include <signal.h>
-#include <sys/time.h>
-#include <math.h>
 #include "util.h"
 
-/************************************************************************************************ 
-		These DEFINE statements represent the workload size of each task and 
-		the time quantum values for Round Robin scheduling for each task.
-*************************************************************************************************/
+// Workloads for each task: Task 1, Task 2, Task 3, Task 4
+// Workload is always sorted from most to least intensive
+const int WORKLOADS[N_TASKS] = {100000, 50000, 25000, 10000};
+const int QUANTUMS[N_TASKS] = {7500, 10000, 30000, 60000};
 
-#define WORKLOAD1 100000
-#define WORKLOAD2 50000
-#define WORKLOAD3 25000
-#define WORKLOAD4 10000
-
-#define QUANTUM1 7500
-#define QUANTUM2 10000
-#define QUANTUM3 30000
-#define QUANTUM4 60000
-
-
-int main(int argc, char const *argv[])
+double round_robin(int iterations)
 {
-    struct timespec start, end[4];
-	pid_t pid1, pid2, pid3, pid4;
-	int running1, running2, running3, running4;
-    int done1, done2, done3, done4;
+	double *task_response_times[N_TASKS];
 
-	pid1 = fork();
-
-	if (pid1 == 0){
-
-		myfunction(WORKLOAD1);
-
-		exit(0);
-	}
-	kill(pid1, SIGSTOP);
-
-	pid2 = fork();
-
-	if (pid2 == 0){
-
-		myfunction(WORKLOAD2);
-
-		exit(0);
-	}
-	kill(pid2, SIGSTOP);
-
-	pid3 = fork();
-
-	if (pid3 == 0){
-
-		myfunction(WORKLOAD3);
-
-		exit(0);
-	}
-	kill(pid3, SIGSTOP);
-
-	pid4 = fork();
-
-	if (pid4 == 0){
-
-		myfunction(WORKLOAD4);
-
-		exit(0);
-	}
-	kill(pid4, SIGSTOP);
-
-	/************************************************************************************************ 
-		At this point, all  newly-created child processes are stopped, and ready for scheduling.
-	*************************************************************************************************/
-
-	/************************************************************************************************
-		- Scheduling code starts here
-		- Below is a sample schedule. (which scheduling algorithm is this?)
-		- For the assignment purposes, you have to replace this part with the other scheduling methods 
-		to be implemented.
-	************************************************************************************************/
-
-	//round robin with a multi-level queue
-	running1 = 1;
-    done1 = 1;
-	running2 = 1;
-    done2 = 1;
-	running3 = 1;
-    done3 = 1;
-	running4 = 1;
-    done4 = 1;
-
-    clock_gettime(CLOCK_MONOTONIC, &start);
-
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
+	for (size_t i = 0; i < N_TASKS; i++)
 	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
-		}
-
-        waitpid(pid1, &running1, WNOHANG);
-        if (done1 != running1) { clock_gettime(CLOCK_MONOTONIC, &end[0]); }
-        done1 = running1;
-
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-
-        waitpid(pid2, &running2, WNOHANG);
-        if (done2 != running2) { clock_gettime(CLOCK_MONOTONIC, &end[1]); }
-        done2 = running2;
-
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-
-        waitpid(pid3, &running3, WNOHANG);
-        if (done3 != running3) { clock_gettime(CLOCK_MONOTONIC, &end[2]); }
-        done3 = running3;
-
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-
-        waitpid(pid4, &running4, WNOHANG);
-        if (done4 != running4) { clock_gettime(CLOCK_MONOTONIC, &end[3]); }
-        done4 = running4;
+		task_response_times[i] = (double *)malloc(sizeof(double) * iterations);
 	}
 
+	for (size_t iter = 0; iter < iterations; iter++)
+	{
+		struct timespec start, end[N_TASKS];
+		pid_t task_pids[N_TASKS];
+		int run_state[N_TASKS] = {1, 1, 1, 1};
+		int prev_run_state[N_TASKS] = {1, 1, 1, 1};
+		int tasks_left = N_TASKS;
 
-	/************************************************************************************************
-		- Scheduling code ends here
-	************************************************************************************************/
-	double response_time[4];
+		create_and_suspend_tasks(task_pids, WORKLOADS);
 
-    for (int i = 0; i < 4; ++i) {
-        response_time[i] =  end[i].tv_sec - start.tv_sec + ((end[i].tv_nsec - start.tv_nsec) / 1000000000.0);
-    }
+		printf("Iter %ld | tasks created\n", iter);
 
-    find_stats(response_time);
+		/************************************************************************************************
+			At this point, all  newly-created child processes are stopped, and ready for scheduling.
+		*************************************************************************************************/
 
-	return 0;
+		/************************************************************************************************
+			- Scheduling code starts here
+			- Below is a sample schedule. (which scheduling algorithm is this?)
+			- For the assignment purposes, you have to replace this part with the other scheduling methods
+			to be implemented.
+		************************************************************************************************/
+
+		clock_gettime(CLOCK_MONOTONIC, &start);
+
+		// Run all tasks until they are all finished
+		while (tasks_left > 0)
+		{
+			// Check if any tasks are ready to run
+			for (size_t i = 0; i < N_TASKS; i++)
+			{
+				if (run_state[i] > 0)
+				{
+					// Resume task, run for quantum, suspend task
+					kill(task_pids[i], SIGCONT);
+					usleep(QUANTUMS[i]);
+					kill(task_pids[i], SIGSTOP);
+
+					// Update run state of task
+					waitpid(task_pids[i], &run_state[i], WNOHANG);
+
+					// Check if run state changed
+					if (run_state[i] != prev_run_state[i])
+					{
+						// Run state changed, so record end time
+						clock_gettime(CLOCK_MONOTONIC, &end[i]);
+						tasks_left--;
+					}
+				}
+			}
+		}
+
+		/************************************************************************************************
+			- Scheduling code ends here
+		************************************************************************************************/
+
+		for (int i = 0; i < N_TASKS; ++i)
+		{
+			task_response_times[i][iter] = end[i].tv_sec - start.tv_sec + ((end[i].tv_nsec - start.tv_nsec) / 1000000000.0);
+		}
+	}
+
+	return find_stats2d(task_response_times, iterations);
 }
