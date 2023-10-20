@@ -85,7 +85,7 @@ int main2(int argc, char const *argv[])
 		to be implemented.
 	************************************************************************************************/
 
-	running = 0;
+	running = 1;
     done = 1;
 
 	//struct with pid and workload and reorder according to runtime (higher workload, higher runtime)
@@ -128,12 +128,9 @@ int main2(int argc, char const *argv[])
     clock_gettime(CLOCK_MONOTONIC, &start);
 
 	for(int i = 0; i < 4; i++){
-		running++;
+		running = 1;
 		if(running >0){
 			kill(process[i].pidNum, SIGCONT);
-			usleep(process[i].Workload);
-			kill(process[i].pidNum,SIGSTOP);
-
 		}
 		waitpid(process[i].pidNum, &running, WNOHANG);
         if (done != running) { clock_gettime(CLOCK_MONOTONIC, &end[i]); }
