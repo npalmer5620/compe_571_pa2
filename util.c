@@ -127,7 +127,8 @@ double find_stats2d(double* response_time[N_TASKS], size_t iterations) {
     std_dev = std_dev / (iterations * N_TASKS);
     std_dev = sqrt(std_dev);
 
-    printf("\nN_TASKS = %d | Iterations = %ld\n", N_TASKS, iterations);
+    printf("\n---Global Statistics---\n");
+    printf("N_TASKS = %d | Iterations = %ld\n", N_TASKS, iterations);
     printf("Mean Response Time = %lf s | Std. Dev = %lf s\n\n", mean, std_dev);
     printf("---Task Specific Statistics---\n");
 
@@ -153,9 +154,4 @@ void create_and_suspend_tasks(pid_t task_pids[N_TASKS], const int workloads[N_TA
             kill(task_pids[i], SIGSTOP);
         }
     }
-}
-
-int get_tasks_remaining(pid_t task_pids[N_TASKS]) {
-    int tasks_remaining = 0;
-    
 }
