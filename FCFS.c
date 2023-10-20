@@ -26,7 +26,7 @@
 #define QUANTUM4 60000
 
 
-int main(int argc, char const *argv[])
+int main2(int argc, char const *argv[])
 {
     struct timespec start, end[4];
 	pid_t pid1, pid2, pid3, pid4;
